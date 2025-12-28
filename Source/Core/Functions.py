@@ -97,7 +97,7 @@ def SendPostWithVideo(bot: TeleBot, user: UserData, video_url: str):
 		bot.send_video(chat_id = user.id, video = types.InputFile(VideoPath))
 		bot.send_message(chat_id = user.id, text = user.get_property("post"), parse_mode = "HTML")
 
-def SendKlingOptions(bot: TeleBot, user: UserData):
+def SendKlingOptions(bot: TeleBot, user: UserData, file_id: str | None = None):
 	"""
 	Отправляет панель настроек **Kling AI**.
 
@@ -105,6 +105,8 @@ def SendKlingOptions(bot: TeleBot, user: UserData):
 	:type bot: TeleBot
 	:param user: Данные пользователя.
 	:type user: UserData
+	:param file_id: ID изображения.
+	:type file_id: str | None
 	"""
 
 	Options = KlingOptions(user)
@@ -112,7 +114,7 @@ def SendKlingOptions(bot: TeleBot, user: UserData):
 	if Options.image_path:
 		bot.send_photo(
 			chat_id = user.id,
-			photo = types.InputFile(Options.image_path),
+			photo = file_id or types.InputFile(Options.image_path),
 			caption = Options.prompt or "Настройте вашу генерацию:",
 			reply_markup = InlineKeyboards.kling_options(user)
 		)

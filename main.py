@@ -442,7 +442,6 @@ def CallbackQuery_KlingOptionsDuration(Call: types.CallbackQuery):
 def CallbackQuery_KlingOptionsPrompt(Call: types.CallbackQuery):
 	User = UsersManagerObject.auth(Call.from_user)
 	User.set_expected_type("prompt")
-	Master.safely_delete_messages(Call.message.chat.id, Call.message.id)
 	Bot.send_message(User.id, "Отправьте описание запроса.")
 
 @Bot.callback_query_handler(lambda Call: Call.data.startswith("kling_options_version"))
@@ -527,5 +526,36 @@ def CallbackQuery(Query: types.CallbackQuery):
 			chat_id = Query.message.chat.id,
 			text = f"Право доступа к боту отозвано у пользователя с ID {TargetID}.",
 		)
+
+#==========================================================================================#
+# >>>>> ОБРАБОТКА ИЗОБРАЖЕНИЙ <<<<< #
+#==========================================================================================#
+
+@Bot.message_handler(content_types = ["photo"])
+def Text(Message: types.Message):
+	User = UsersManagerObject.auth(Message.from_user)
+	Options = KlingOptions(User)
+	Options.drop()
+
+	if not User.has_permissions("base_access"):
+		AccessAlert(Message.chat.id, Bot)
+		return
+	
+	if not Kling.is_enabled:
+		Bot.send_message(
+			chat_id = User.id,
+			text = "<b>Kling AI</b> недоступен. Воспользуйтесь командой /kling для подключения.",
+			parse_mode = "HTML"
+		)
+		return
+	
+	Photo = Message.photo[-1]
+	FileInfo = Bot.get_file(Photo.file_id)
+	File = Bot.download_file(FileInfo.file_path)
+	with open(f"Data/Buffer/{User.id}/0.jpg", "wb") as FileWriter: FileWriter.write(File)
+	Options.select_image(0)
+	
+	User.set_expected_type("prompt")
+	SendKlingOptions(Bot, User)
 
 Bot.infinity_polling()
